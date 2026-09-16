@@ -443,10 +443,8 @@ jobs:
         awk '
           /common_kernel\(/ { in_target=0; already=0 }
           /name = "kernel_aarch64",/ { in_target=1 }
-          in_target && /module_outs = \[/ { already=1 }
-          in_target && /module_implicit_outs =/ && !already && !inserted {
-            print
-            print "    module_outs = ["
+          in_target && /module_implicit_outs =/ && !inserted {
+            print $0 " + ["
             print "        " sprintf("%cnet/wireless/cfg80211.ko%c,", 34, 34)
             print "        " sprintf("%cnet/mac80211/mac80211.ko%c,", 34, 34)
             print "        " sprintf("%cdrivers/net/usb/rndis_host.ko%c,", 34, 34)
@@ -457,7 +455,7 @@ jobs:
           { print }
         ' "$BUILD_FILE" > "$TMP"
         mv "$TMP" "$BUILD_FILE"
-        grep -n -A5 'module_outs = \[' "$BUILD_FILE"
+        grep -n -A5 'module_implicit_outs =' "$BUILD_FILE"
 
     - name: Scan and collect patch rejects
       id: scan
