@@ -440,22 +440,11 @@ jobs:
         BUILD_FILE="common/BUILD.bazel"
         test -f "$BUILD_FILE"
         if ! grep -q '"net/wireless/cfg80211.ko"' "$BUILD_FILE"; then
-          python3 - "$BUILD_FILE" <<'PY'
-        from pathlib import Path
-        import sys
-        p = Path(sys.argv[1])
-        s = p.read_text()
-        marker = '    module_implicit_outs = get_gki_modules_list("arm64") + get_kunit_modules_list("arm64"),\n'
-        addition = marker + '''    module_outs = [
-        "net/wireless/cfg80211.ko",
-        "net/mac80211/mac80211.ko",
-        "drivers/net/usb/rndis_host.ko",
-    ],
-'''
-        if marker not in s:
-            raise SystemExit("module_implicit_outs marker not found in common/BUILD.bazel")
-        p.write_text(s.replace(marker, addition, 1))
-        PY
+          sed -i '/module_implicit_outs = get_gki_modules_list("arm64")/a\    module_outs = [\
+        "net/wireless/cfg80211.ko",\
+        "net/mac80211/mac80211.ko",\
+        "drivers/net/usb/rndis_host.ko",\
+    ],' "$BUILD_FILE"
         fi
         grep -n -A5 'module_outs = \[' "$BUILD_FILE"
 
