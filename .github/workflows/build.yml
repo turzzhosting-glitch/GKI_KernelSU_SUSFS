@@ -444,7 +444,7 @@ jobs:
         "net/wireless/cfg80211.ko",\
         "net/mac80211/mac80211.ko",\
         "drivers/net/usb/rndis_host.ko",\
-    ],' "$BUILD_FILE"
+        ],' "$BUILD_FILE"
         fi
         grep -n -A5 'module_outs = \[' "$BUILD_FILE"
 
