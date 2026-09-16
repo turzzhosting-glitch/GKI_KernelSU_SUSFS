@@ -447,9 +447,9 @@ jobs:
           in_target && /module_implicit_outs =/ && !already && !inserted {
             print
             print "    module_outs = ["
-            print "        \\"net/wireless/cfg80211.ko\\","
-            print "        \\"net/mac80211/mac80211.ko\\","
-            print "        \\"drivers/net/usb/rndis_host.ko\\","
+            print "        " sprintf("%cnet/wireless/cfg80211.ko%c,", 34, 34)
+            print "        " sprintf("%cnet/mac80211/mac80211.ko%c,", 34, 34)
+            print "        " sprintf("%cdrivers/net/usb/rndis_host.ko%c,", 34, 34)
             print "    ],"
             inserted=1
             next
