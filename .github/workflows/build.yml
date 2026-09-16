@@ -317,6 +317,10 @@ jobs:
         android_version: ${{ inputs.android_version }}
         sublevel: ${{ steps.extract.outputs.sublevel }}
 
+    - name: NetHunter baseline configs
+      if: contains(inputs.feature_set, 'NETHUNTER')
+      uses: ./.github/actions/nethunter
+
     - name: DroidSpaces-OSS Patches
       if: contains(inputs.feature_set, 'DS') || inputs.feature_set == 'All'
       uses: ./.github/actions/droidspaces
