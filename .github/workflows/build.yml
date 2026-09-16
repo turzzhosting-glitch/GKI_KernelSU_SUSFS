@@ -444,7 +444,9 @@ jobs:
           /common_kernel\(/ { in_target=0; already=0 }
           /name = "kernel_aarch64",/ { in_target=1 }
           in_target && /module_implicit_outs =/ && !inserted {
-            print $0 " + ["
+            line = $0
+            sub(/,[[:space:]]*$/, "", line)
+            print line " + ["
             print "        " sprintf("%cnet/wireless/cfg80211.ko%c,", 34, 34)
             print "        " sprintf("%cnet/mac80211/mac80211.ko%c,", 34, 34)
             print "        " sprintf("%cdrivers/net/usb/rndis_host.ko%c,", 34, 34)
