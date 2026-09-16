@@ -29,7 +29,9 @@ runs:
           CONFIG_BT=y
           CONFIG_BT_RFCOMM=y
           CONFIG_BT_BNEP=y
-          CONFIG_BT_HIDP=y
+          # Android GKI 6.12 packaging does not ship net/bluetooth/hidp/hidp.ko;
+          # USB HID gadget support below remains enabled for NetHunter HID attacks.
+          CONFIG_BT_HIDP=n
           CONFIG_CFG80211=y
           CONFIG_MAC80211=y
           CONFIG_WEXT_CORE=y
