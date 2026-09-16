@@ -418,12 +418,18 @@ jobs:
 
     - name: Finalize NetHunter Bluetooth module compatibility
       if: contains(inputs.feature_set, 'NETHUNTER')
-      uses: ./.github/actions/set-kernel-config
-      with:
-        config_list: |
-          CONFIG_BT_RFCOMM=n
-          CONFIG_BT_BNEP=n
-          CONFIG_BT_HIDP=n
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Kleaf 6.12 validates the module manifest independently of Kconfig.
+        # These two protocol modules are not produced by Android GKI but were
+        # still listed as required artifacts, so remove only those entries.
+        MODULES="${{ github.workspace }}/kernel/common/modules.bzl"
+        test -f "$MODULES"
+        sed -i '/net\/bluetooth\/hidp\/hidp\.ko/d' "$MODULES"
+        sed -i '/net\/bluetooth\/rfcomm\/rfcomm\.ko/d' "$MODULES"
+        ! grep -qE 'net/bluetooth/(hidp/hidp|rfcomm/rfcomm)\.ko' "$MODULES"
+        echo "Removed unavailable Bluetooth modules from $MODULES"
 
     - name: Scan and collect patch rejects
       id: scan
