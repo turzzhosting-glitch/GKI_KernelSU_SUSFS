@@ -439,13 +439,24 @@ jobs:
         set -euo pipefail
         BUILD_FILE="common/BUILD.bazel"
         test -f "$BUILD_FILE"
-        if ! grep -q '"net/wireless/cfg80211.ko"' "$BUILD_FILE"; then
-          sed -i '/module_implicit_outs = get_gki_modules_list("arm64")/a\    module_outs = [\
-        "net/wireless/cfg80211.ko",\
-        "net/mac80211/mac80211.ko",\
-        "drivers/net/usb/rndis_host.ko",\
-        ],' "$BUILD_FILE"
-        fi
+        TMP="${BUILD_FILE}.tmp"
+        awk '
+          /common_kernel\(/ { in_target=0 }
+          /name = "kernel_aarch64",/ { in_target=1 }
+          in_target && /module_outs = \[/ { already=1 }
+          in_target && /module_implicit_outs =/ && !already && !inserted {
+            print
+            print "    module_outs = ["
+            print "        \\"net/wireless/cfg80211.ko\\"," 
+            print "        \\"net/mac80211/mac80211.ko\\"," 
+            print "        \\"drivers/net/usb/rndis_host.ko\\"," 
+            print "    ],"
+            inserted=1
+            next
+          }
+          { print }
+        ' "$BUILD_FILE" > "$TMP"
+        mv "$TMP" "$BUILD_FILE"
         grep -n -A5 'module_outs = \[' "$BUILD_FILE"
 
     - name: Scan and collect patch rejects
