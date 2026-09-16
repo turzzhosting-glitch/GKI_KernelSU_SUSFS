@@ -416,6 +416,15 @@ jobs:
     - name: Clean Kernel Flags
       uses: ./.github/actions/clean-kernel-flags
 
+    - name: Finalize NetHunter Bluetooth module compatibility
+      if: contains(inputs.feature_set, 'NETHUNTER')
+      uses: ./.github/actions/set-kernel-config
+      with:
+        config_list: |
+          CONFIG_BT_RFCOMM=n
+          CONFIG_BT_BNEP=n
+          CONFIG_BT_HIDP=n
+
     - name: Scan and collect patch rejects
       id: scan
       if: always()
