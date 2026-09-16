@@ -14,6 +14,9 @@ inputs:
   os_patch_level:
     description: 'OS patch level (e.g., 2024-01)'
     required: true
+  sublevel:
+    description: 'Linux kernel sublevel used for exact Android common tag fallback'
+    required: true
 
 outputs:
   deprecated_branch:
@@ -61,7 +64,15 @@ runs:
           # build keeps working. Tags are never deleted.
           TAG_FALLBACK=""
           if [ "$DEPRECATED" = "false" ] && [ -z "$REMOTE_BRANCH" ]; then
-            LATEST_TAG=$(git ls-remote https://android.googlesource.com/kernel/common "refs/tags/${FORMATTED_BRANCH}_r*" 2>/dev/null | awk '{print $2}' | grep -v '\^{}$' | sed 's|refs/tags/||' | awk -F'_r' '{print $NF+0, $0}' | sort -n | tail -n 1 | cut -d' ' -f2- || true)
+            # Android 16 / Linux 6.12 also publishes immutable exact-sublevel
+            # tags such as android16-6.12.38_r00. Prefer that tag because a
+            # monthly common branch may not exist even when the stock kernel
+            # sublevel is available and is the device's required KMI baseline.
+            EXACT_TAG_PREFIX="${ANDROID_PART}-${KERNEL_PART}.${{ inputs.sublevel }}"
+            LATEST_TAG=$(git ls-remote https://android.googlesource.com/kernel/common "refs/tags/${EXACT_TAG_PREFIX}_r*" 2>/dev/null | awk '{print $2}' | grep -v '\^{}$' | sed 's|refs/tags/||' | awk -F'_r' '{print $NF+0, $0}' | sort -n | tail -n 1 | cut -d' ' -f2- || true)
+            if [ -z "$LATEST_TAG" ]; then
+              LATEST_TAG=$(git ls-remote https://android.googlesource.com/kernel/common "refs/tags/${FORMATTED_BRANCH}_r*" 2>/dev/null | awk '{print $2}' | grep -v '\^{}$' | sed 's|refs/tags/||' | awk -F'_r' '{print $NF+0, $0}' | sort -n | tail -n 1 | cut -d' ' -f2- || true)
+            fi
             if [ -n "$LATEST_TAG" ]; then
               echo "[!] Note: Branch ${FORMATTED_BRANCH} head missing upstream; using tag ${LATEST_TAG}."
               sed -i "/path=\"common\"/ s/revision=\"${FORMATTED_BRANCH}\"/revision=\"${LATEST_TAG}\"/" "$DEFAULT_MANIFEST_PATH"
