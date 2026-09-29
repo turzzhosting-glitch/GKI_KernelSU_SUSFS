@@ -297,8 +297,8 @@ jobs:
           # the three core root flavors plus each pinned commit; SukiSU-Ultra,
           # KowSU, and No Root are opt-in only and never part of 'All'.
           #
-          # kernelsu, resukisu, and sukisu-ultra pin in verified mode;
-          # KernelSU-Next (next) always builds at latest.
+          # kernelsu, resukisu, sukisu-ultra, and KernelSU-Next pin in verified mode;
+          # latest/update modes follow their configured moving branches.
           # With SUSFS off, every root tracks latest instead of pins:
           # SukiSU-Ultra follows main (builtin only matters for SUSFS builds).
           if [ "${{ inputs.use_susfs }}" = "true" ]; then
