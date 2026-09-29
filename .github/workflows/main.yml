@@ -118,6 +118,10 @@ on:
         description: "BPF Stack (BTF + eBPF + FUSE-BPF)"
         type: boolean
         default: true
+      use_nethunter:
+        description: "NetHunter hardware/module support (device and firmware dependent)"
+        type: boolean
+        default: false
       use_perf:
         description: "Performance"
         type: boolean
@@ -578,6 +582,7 @@ jobs:
           [ "${{ inputs.use_ptrace }}" = "true" ] && FEATURES="${FEATURES}Ptrace+"
           [ "${{ inputs.use_unicode }}" = "true" ] && FEATURES="${FEATURES}Unicode+"
           [ "${{ inputs.use_bpf }}" = "true" ] && FEATURES="${FEATURES}BPF+"
+          [ "${{ inputs.use_nethunter }}" = "true" ] && FEATURES="${FEATURES}NETHUNTER+"
           [ "${{ inputs.use_perf }}" = "true" ] && FEATURES="${FEATURES}Perf+"
           echo "feature_set=${FEATURES%+}" >> "$GITHUB_OUTPUT"
 
