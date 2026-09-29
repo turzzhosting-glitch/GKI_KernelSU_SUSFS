@@ -577,6 +577,36 @@ jobs:
     - name: Initialize Config Fragment
       run: touch "${{ github.workspace }}/wild_gki.fragment"
 
+    - name: Register experimental module outputs
+      if: contains(inputs.feature_set, 'NETHUNTER_EXP')
+      shell: bash
+      run: |
+        set -euo pipefail
+        BUILD_FILE="${{ github.workspace }}/kernel/common/BUILD.bazel"
+        test -f "$BUILD_FILE" || { echo "ERROR: missing $BUILD_FILE" >&2; exit 1; }
+        python3 - "$BUILD_FILE" <<'PY'
+        import re
+        import sys
+        from pathlib import Path
+
+        path = Path(sys.argv[1])
+        text = path.read_text()
+        modules = [
+            "net/can/can-isotp.ko",
+            "drivers/bluetooth/hci_vhci.ko",
+            "net/bluetooth/bnep/bnep.ko",
+        ]
+        if "module_outs = [" not in text:
+            raise SystemExit("ERROR: module_outs list not found in common/BUILD.bazel")
+        missing = [m for m in modules if f'"{m}"' not in text]
+        if missing:
+            match = re.search(r"module_outs = \[\n(\s*)", text)
+            indent = match.group(1) if match else "        "
+            addition = "".join(f'{indent}"{m}",\n' for m in missing)
+            text = text.replace("module_outs = [\n", "module_outs = [\n" + addition, 1)
+            path.write_text(text)
+        print("Registered experimental module outputs:", ", ".join(modules))
+
     - name: Apply Kernel Bypass Hack
       if: ${{ inputs.allow_version_mismatch == 'true' }}
       uses: ./.github/actions/bypass-kernel
