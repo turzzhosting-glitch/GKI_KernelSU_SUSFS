@@ -95,14 +95,3 @@ runs:
           CONFIG_DVB_RTL2832_SDR=m
           CONFIG_DVB_SI2168=m
           CONFIG_DVB_ZD1301_DEMOD=m
-
-    - name: Enable NFS client support
-      uses: ./.github/actions/set-kernel-config
-      with:
-        config_list: |
-          CONFIG_NETWORK_FILESYSTEMS=y
-          CONFIG_NFS_FS=m
-          CONFIG_NFS_V2=y
-          CONFIG_NFS_V3=y
-          CONFIG_NFS_V4=y
-          CONFIG_ROOT_NFS=n
