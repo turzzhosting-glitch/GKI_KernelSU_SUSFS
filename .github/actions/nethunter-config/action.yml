@@ -1,6 +1,12 @@
 name: 'Setup NetHunter Config'
 description: 'Enable only firmware-proven NetHunter baseline options for X6853 MT6789 GKI 6.12'
 
+inputs:
+  experimental:
+    required: false
+    default: 'false'
+    description: 'Opt-in protocol-only additions: BNEP, VHCI, and CAN ISO-TP'
+
 runs:
   using: "composite"
   steps:
@@ -42,3 +48,13 @@ runs:
           CONFIG_NAMESPACES=y
           CONFIG_SECCOMP=y
           CONFIG_NETFILTER=y
+
+    - name: Enable protocol-only NetHunter experiment
+      if: inputs.experimental == 'true'
+      uses: ./.github/actions/set-kernel-config
+      with:
+        config_list: |
+          # These do not replace MediaTek vendor hardware drivers.
+          CONFIG_BT_BNEP=m
+          CONFIG_BT_HCIVHCI=m
+          CONFIG_CAN_ISOTP=m

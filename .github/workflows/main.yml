@@ -122,6 +122,10 @@ on:
         description: "NetHunter hardware/module support (device and firmware dependent)"
         type: boolean
         default: false
+      use_nethunter_experimental:
+        description: "Opt-in protocol-only NetHunter additions (BNEP, VHCI, CAN ISO-TP)"
+        type: boolean
+        default: false
       use_perf:
         description: "Performance"
         type: boolean
@@ -583,6 +587,7 @@ jobs:
           [ "${{ inputs.use_unicode }}" = "true" ] && FEATURES="${FEATURES}Unicode+"
           [ "${{ inputs.use_bpf }}" = "true" ] && FEATURES="${FEATURES}BPF+"
           [ "${{ inputs.use_nethunter }}" = "true" ] && FEATURES="${FEATURES}NETHUNTER+"
+          [ "${{ inputs.use_nethunter_experimental }}" = "true" ] && FEATURES="${FEATURES}NETHUNTER_EXP+"
           [ "${{ inputs.use_perf }}" = "true" ] && FEATURES="${FEATURES}Perf+"
           echo "feature_set=${FEATURES%+}" >> "$GITHUB_OUTPUT"
 

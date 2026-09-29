@@ -394,6 +394,8 @@ jobs:
     - name: Setup NetHunter Config
       if: contains(inputs.feature_set, 'NETHUNTER') || inputs.feature_set == 'All'
       uses: ./.github/actions/nethunter-config
+      with:
+        experimental: ${{ contains(inputs.feature_set, 'NETHUNTER_EXP') }}
 
     - name: DroidSpaces-OSS Patches
       if: contains(inputs.feature_set, 'DS') || inputs.feature_set == 'All'
