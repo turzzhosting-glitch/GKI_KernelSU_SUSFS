@@ -94,6 +94,44 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v7
 
+    - name: Strict XOS 16 NetHunter Firmware Gate
+      if: contains(inputs.feature_set, 'NETHUNTER') || inputs.feature_set == 'All'
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        ANDROID_VERSION: ${{ inputs.android_version }}
+        KERNEL_VERSION: ${{ inputs.kernel_version }}
+        SUBLEVEL: ${{ inputs.sublevel }}
+        PATCH_LEVEL: ${{ inputs.os_patch_level }}
+        PAGE_SIZE: ${{ inputs.page_size }}
+        ROOT_FLAVOR: ${{ inputs.root_flavor }}
+        ALLOW_MISMATCH: ${{ inputs.allow_version_mismatch }}
+      run: |
+        set -euo pipefail
+        errors=0
+        require() {
+          local actual="$1" expected="$2" label="$3"
+          if [ "$actual" != "$expected" ]; then
+            echo "ERROR: ${label}: expected '${expected}', got '${actual}'" >&2
+            errors=$((errors + 1))
+          fi
+        }
+        # X6853 XOS 16 firmware audit was performed against Android 16 GKI
+        # 6.12.38, 4 KiB page-size, 2025-09 ABI line. Refuse silent mixing.
+        require "$VERSION" "android16-6.12" "GKI branch"
+        require "$ANDROID_VERSION" "android16" "Android branch"
+        require "$KERNEL_VERSION" "6.12" "kernel family"
+        require "$SUBLEVEL" "38" "kernel sublevel"
+        require "$PATCH_LEVEL" "2025-09" "firmware ABI patch level"
+        require "$PAGE_SIZE" "4k" "ARM64 page size"
+        require "$ROOT_FLAVOR" "next" "root implementation"
+        require "$ALLOW_MISMATCH" "false" "module version mismatch bypass"
+        if [ "$errors" -ne 0 ]; then
+          echo "ERROR: refusing firmware-incompatible NetHunter build (${errors} gate failure(s))." >&2
+          exit 1
+        fi
+        echo "Strict gate passed: XOS 16 / Android 16 / GKI 6.12.38 / 2025-09 / 4k / KernelSU-Next / no mismatch bypass."
+
     - name: Validate Page Size
       shell: bash
       run: |

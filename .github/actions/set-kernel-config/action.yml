@@ -55,3 +55,16 @@ runs:
       while IFS= read -r line || [ -n "$line" ]; do
         apply_line "$line"
       done <<< "$CONFIG_LIST"
+
+      # Fail closed if a requested symbol was not written exactly. This avoids
+      # reporting success when Kconfig renamed/ignored a symbol.
+      while IFS= read -r line || [ -n "$line" ]; do
+        line="$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+        [[ -z "$line" || "$line" == \#* ]] && continue
+        key="${line%%=*}"
+        value="${line#*=}"
+        if ! grep -qE "^${key}=${value}$" "$DEFCONFIG"; then
+          echo "ERROR: config gate failed: ${key}=${value} is absent from ${DEFCONFIG}" >&2
+          exit 1
+        fi
+      done <<< "$CONFIG_LIST"
