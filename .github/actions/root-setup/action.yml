@@ -93,6 +93,14 @@ runs:
           echo "Selected root checkout does not contain a kernel integration." >&2
           exit 1
         fi
+        if [ "$flavor" = "next" ]; then
+          uapi_file="$directory/uapi/supercall.h"
+          if [ ! -f "$uapi_file" ] || ! grep -Eq 'KERNEL_SU_UAPI_VERSION[[:space:]]*=[[:space:]]*4' "$uapi_file"; then
+            echo "KernelSU-Next root does not provide required UAPI v4 for manager matching." >&2
+            exit 1
+          fi
+          echo "Verified KernelSU-Next UAPI v4 in $uapi_file"
+        fi
         root_version="$(git -C "$directory" describe --tags --always --dirty)"
 
         relative_kernel="$(realpath --relative-to="$drivers_dir" "$PWD/$directory/kernel")"

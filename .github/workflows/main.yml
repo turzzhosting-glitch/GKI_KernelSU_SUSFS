@@ -233,6 +233,10 @@ jobs:
           PIN_KERNELSU="08a3b087e49227c8a6731c5f1114998b5e25255b"
           PIN_RESUKISU="fa8311f632a215b5381ec644627c6198d1e8a13e"
           PIN_SUKISU_ULTRA="b20dee702035af09cb2ecb5f35443bbc1747f3e6"
+          # Issue #305: pair the v4-UAPI KernelSU-Next driver with the
+          # official manager build from the same verified development point.
+          PIN_NEXT_ROOT="d575262c1b40180a0f915544f42d8c4ab34b874b"
+          PIN_NEXT_MANAGER="c61d876480976e553060789759cc4b54c9e7d816"
           declare -A PIN_SUSFS=(
             [susfs_commit_android12_5_10]="9892175b4acec7ee844e113b8d02c0f4d12cdfac"
             [susfs_commit_android13_5_10]="5326e21a7eb232f9e21debdd5164e99bee3d1e2f"
@@ -276,10 +280,14 @@ jobs:
           # NoMount (pinned in verified mode, else dev tip)
           emit nomount_commit "$(pick "$PIN_NOMOUNT" https://github.com/maxsteeel/nomount.git refs/heads/dev)"
 
-          # KernelSU-Next manager - always built from the official repo's dev branch.
-          # pershoot's fork is used only for the kernel SUSFS integration (root_commit below),
-          # never for the manager. Manager always builds at latest.
-          emit kernelsu_commit "$(resolve_sha https://github.com/KernelSU-Next/KernelSU-Next.git refs/heads/dev)"
+          # KernelSU-Next manager. In verified mode, use the exact manager
+          # source paired with the UAPI-v4 root below; latest/update retain
+          # the moving official dev behavior.
+          if [ "$COMMIT_MODE" = "verified" ]; then
+            emit kernelsu_commit "$PIN_NEXT_MANAGER"
+          else
+            emit kernelsu_commit "$(resolve_sha https://github.com/KernelSU-Next/KernelSU-Next.git refs/heads/dev)"
+          fi
           echo "kernelsu_branch=dev" >> "$GITHUB_OUTPUT"
 
           # Selected root implementation(s). Maps the human-facing choice
@@ -310,9 +318,17 @@ jobs:
           KOWSU_COMMIT="$(resolve_sha https://github.com/KOWX712/KernelSU.git refs/heads/master)"
           emit kowsu_commit "$KOWSU_COMMIT"
           if [ "${{ inputs.use_susfs }}" = "true" ]; then
-            NEXT_COMMIT="$(resolve_sha https://github.com/pershoot/KernelSU-Next.git refs/heads/dev-susfs)"
+            if [ "$COMMIT_MODE" = "verified" ]; then
+              NEXT_COMMIT="$PIN_NEXT_ROOT"
+            else
+              NEXT_COMMIT="$(resolve_sha https://github.com/pershoot/KernelSU-Next.git refs/heads/dev-susfs)"
+            fi
           else
-            NEXT_COMMIT="$(resolve_sha https://github.com/KernelSU-Next/KernelSU-Next.git refs/heads/dev)"
+            if [ "$COMMIT_MODE" = "verified" ]; then
+              NEXT_COMMIT="$PIN_NEXT_MANAGER"
+            else
+              NEXT_COMMIT="$(resolve_sha https://github.com/KernelSU-Next/KernelSU-Next.git refs/heads/dev)"
+            fi
           fi
 
           mk_entry() { # flavor variant commit
@@ -1723,4 +1739,3 @@ jobs:
             --prerelease \
             --title "Nightly (${{ github.ref_name }} $(date -u +%Y-%m-%d))" \
             --notes-file nightly/release_body.md
-
