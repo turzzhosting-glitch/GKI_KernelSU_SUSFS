@@ -155,53 +155,53 @@ runs:
             exit 1
           fi
           python3 - <<'PY'
-from pathlib import Path
-import re
+          from pathlib import Path
+          import re
 
-path = Path("fs/proc/task_mmu.c")
-text = path.read_text()
-start = text.index("static int show_smaps_rollup")
-end = text.index("\nstatic ", start + 1)
-section = text[start:end]
+          path = Path("fs/proc/task_mmu.c")
+          text = path.read_text()
+          start = text.index("static int show_smaps_rollup")
+          end = text.index("\nstatic ", start + 1)
+          section = text[start:end]
 
-if "bypass_orig_flow:" not in section:
-    call = re.compile(r"(?m)^(?P<i>[ \t]*)smap_gather_stats\(vma, &mss, 0\);$")
-    match = call.search(section)
-    if not match:
-        raise SystemExit("Cannot locate show_smaps_rollup initial stats call")
-    i = match.group("i")
-    replacement = (
-        f"{i}#ifdef CONFIG_KSU_SUSFS_SUS_MAP\n"
-        f"{i}if (vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))\n"
-        f"{i}\tgoto bypass_orig_flow;\n"
-        f"{i}#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP\n"
-        f"{match.group(0)}\n"
-        f"{i}#ifdef CONFIG_KSU_SUSFS_SUS_MAP\n"
-        f"{i}bypass_orig_flow:\n"
-        f"{i}#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP"
-    )
-    section = section[:match.start()] + replacement + section[match.end():]
+          if "bypass_orig_flow:" not in section:
+              call = re.compile(r"(?m)^(?P<i>[ \t]*)smap_gather_stats\(vma, &mss, 0\);$")
+              match = call.search(section)
+              if not match:
+                  raise SystemExit("Cannot locate show_smaps_rollup initial stats call")
+              i = match.group("i")
+              replacement = (
+                  f"{i}#ifdef CONFIG_KSU_SUSFS_SUS_MAP\n"
+                  f"{i}if (vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))\n"
+                  f"{i}\tgoto bypass_orig_flow;\n"
+                  f"{i}#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP\n"
+                  f"{match.group(0)}\n"
+                  f"{i}#ifdef CONFIG_KSU_SUSFS_SUS_MAP\n"
+                  f"{i}bypass_orig_flow:\n"
+                  f"{i}#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP"
+              )
+              section = section[:match.start()] + replacement + section[match.end():]
 
-if "!vma->vm_file || !(SUSFS_IS_INODE_SUS_MAP" not in section:
-    pair = re.compile(
-        r"(?m)^(?P<i>[ \t]*)smap_gather_stats\(vma, &mss, last_vma_end\);\n"
-        r"(?P=i)last_vma_end = vma->vm_end;$"
-    )
-    match = pair.search(section)
-    if not match:
-        raise SystemExit("Cannot locate show_smaps_rollup overlap stats block")
-    i = match.group("i")
-    replacement = (
-        f"{i}if (!vma->vm_file || !(SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))) {{\n"
-        f"{i}\tsmap_gather_stats(vma, &mss, last_vma_end);\n"
-        f"{i}\tlast_vma_end = vma->vm_end;\n"
-        f"{i}}}"
-    )
-    section = section[:match.start()] + replacement + section[match.end():]
+          if "!vma->vm_file || !(SUSFS_IS_INODE_SUS_MAP" not in section:
+              pair = re.compile(
+                  r"(?m)^(?P<i>[ \t]*)smap_gather_stats\(vma, &mss, last_vma_end\);\n"
+                  r"(?P=i)last_vma_end = vma->vm_end;$"
+              )
+              match = pair.search(section)
+              if not match:
+                  raise SystemExit("Cannot locate show_smaps_rollup overlap stats block")
+              i = match.group("i")
+              replacement = (
+                  f"{i}if (!vma->vm_file || !(SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))) {{\n"
+                  f"{i}\tsmap_gather_stats(vma, &mss, last_vma_end);\n"
+                  f"{i}\tlast_vma_end = vma->vm_end;\n"
+                  f"{i}}}"
+              )
+              section = section[:match.start()] + replacement + section[match.end():]
 
-text = text[:start] + section + text[end:]
-path.write_text(text)
-PY
+          text = text[:start] + section + text[end:]
+          path.write_text(text)
+          PY
           rm -f fs/proc/task_mmu.c.rej
           echo "Applied 6.12 SUS_MAP task_mmu.c compatibility fallback."
         fi
